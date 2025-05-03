@@ -1,30 +1,22 @@
-﻿using System;
+﻿using CodeQuestsTask.Domain.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CodeQuestsTask.Domain.Models
+namespace CodeQuestsTask.Domain.ViewModels
 {
-    public class Match
+    public class MatchPublisherDto
     {
-        [Key]
-        public int Id { get; set; }
-        [Required]
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        [Required]
         public string ImageUrl { get; set; } = string.Empty;
-        [Required]
         public string VideoUrl { get; set; } = string.Empty;
-        [Required]
         public string MatchStatus { get; set; } = string.Empty;    // Live , Replay, Cancelled, Upcoming
-        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public bool IsDeleted { get; set; } = false;
-        [Required]
-        public string CreatedById { get; set; } = string.Empty; // FK to ApplicationUser
-        public ApplicationUser? User { get; set; } // Navigation property
+        public string CreatedById { get; set; } = string.Empty;
+        public string PublisherName { get; set; } = string.Empty;
     }
 }

@@ -7,7 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Repository\" />
+    <ProjectReference Include="..\CodeQuestsTask.Application\CodeQuestsTask.Application.csproj" />
+    <ProjectReference Include="..\CodeQuestsTask.Domain\CodeQuestsTask.Domain.csproj" />
   </ItemGroup>
 
 </Project>
