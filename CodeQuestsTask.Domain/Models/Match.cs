@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,9 +23,10 @@ namespace CodeQuestsTask.Domain.Models
         public string MatchStatus { get; set; } = string.Empty;    // Live , Replay, Cancelled, Upcoming
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public bool IsDeleted { get; set; } = false;
+        public bool IsDeleted { get; set; }
         [Required]
         public string CreatedById { get; set; } = string.Empty; // FK to ApplicationUser
+        [ForeignKey("CreatedById")]
         public ApplicationUser? User { get; set; } // Navigation property
     }
 }

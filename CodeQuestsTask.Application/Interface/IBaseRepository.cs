@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CodeQuestsTask.Application.Interface
 {
-    public interface IBaseRepository<T, Type> where T : class
+    public interface IBaseRepository<T, TType> where T : class
     {
         ValueTask<IEnumerable<T>> GetAllAsync(
             int pagesize = 10,
@@ -16,10 +16,11 @@ namespace CodeQuestsTask.Application.Interface
             Func<IQueryable<T>, IQueryable<T>>? include = null,
             Expression<Func<T, bool>>? filter = null
         );
-        ValueTask<T?> GetByIdAsync(Type id);
-        IEnumerable<T> GetByNameAsync(Expression<Func<T, bool>> filter);
+        ValueTask<T?> GetByIdAsync(TType id);
+        IEnumerable<T> GetByName(Expression<Func<T, bool>> filter);
         ValueTask<T> AddAsync(T entity);
-        ValueTask<bool> UpdateAsync(T entity);
-        ValueTask<bool> DeleteAsync(Type id);
+        ValueTask<bool> UpdateAsync(T entity, params string[] modified);
+        ValueTask<bool> DeleteAsync(TType id);
     }
 }
+

@@ -5,12 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CodeQuestsTask.Infrastructure.Repository
 {
-    public class BaseRepository<T, Type> : IBaseRepository<T, Type> where T : class
+    public class BaseRepository<T, TType> : IBaseRepository<T, TType> where T : class
     {
         private readonly ApplicationDbContext _context;
         private DbSet<T> _dbset;
@@ -45,12 +46,26 @@ namespace CodeQuestsTask.Infrastructure.Repository
             return await query.ToListAsync();
         }
 
-        public async ValueTask<T?> GetByIdAsync(Type id)
+        public async ValueTask<T?> GetByIdAsync(TType id)
         {
-            return await _dbset.FindAsync(id);
+            var entity = await _dbset.AsNoTracking()
+                .FirstOrDefaultAsync(e => EF.Property<TType>(e, "Id")!.Equals(id));
+
+            if (entity == null)
+                return null;
+
+            var prop = typeof(T).GetProperty("IsDeleted");
+            if (prop != null && prop.PropertyType == typeof(bool))
+            {
+                bool isDeleted = (bool)prop.GetValue(entity)!;
+                if (isDeleted)
+                    return null;
+            }
+
+            return entity;
         }
 
-        public IEnumerable<T> GetByNameAsync(Expression<Func<T, bool>> filter)
+        public IEnumerable<T> GetByName(Expression<Func<T, bool>> filter)
         {
             return _dbset.Where(filter);
         }
@@ -61,14 +76,18 @@ namespace CodeQuestsTask.Infrastructure.Repository
             return entry.Entity;
         }
 
-        public ValueTask<bool> UpdateAsync(T entity)
+        public ValueTask<bool> UpdateAsync(T entity, params string[] modified)
         {
             var result = _dbset.Attach(entity);
             //_context.Entry(entity).State = EntityState.Modified;
+            foreach(var prop in modified)
+            {
+                _context.Entry(entity).Property(prop).IsModified = true;
+            }
             return result.State == EntityState.Modified? new ValueTask<bool>(true) : new ValueTask<bool>(false);
         }
 
-        public async ValueTask<bool> DeleteAsync(Type id)
+        public async ValueTask<bool> DeleteAsync(TType id)
         {
             var entity = await _dbset.FindAsync(id);
             if (entity == null) return false;

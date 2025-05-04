@@ -9,14 +9,14 @@ using System.Threading.Tasks;
 
 namespace CodeQuestsTask.Application.Mapping
 {
-    public class MappingProfile: Profile
+    public class MappingProfile : Profile
     {
         public MappingProfile()
         {
-            // mapping from Match to MatchPublisherDto
+            // mapping from Match to MatchPublisherDto  
             CreateMap<MatchPublisherDto, Match>()
                 .ReverseMap()
-                .ForMember(opts => opts.PublisherName, x => x.MapFrom(u => u.User!.Name));
+                .ForMember(opts => opts.PublisherName, x => x.MapFrom(u => u.User!.Name != null ? u.User.Name : null ));
 
             CreateMap<ApplicationUser, RegisterDto>().ReverseMap();
         }

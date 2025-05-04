@@ -18,5 +18,15 @@ namespace CodeQuestsTask.Domain.Data
         public DbSet<Match> Matches { get; set; }
         public DbSet<Playlist> Playlists { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            builder.Entity<Match>()
+                .HasOne(m => m.User)
+                .WithMany()
+                .HasForeignKey(m => m.CreatedById)
+                .OnDelete(DeleteBehavior.Cascade);
+            base.OnModelCreating(builder);
+        }
+
     }
 }

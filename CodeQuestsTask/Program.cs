@@ -1,3 +1,10 @@
+using CodeQuestsTask.Application.Services;
+using CodeQuestsTask.Domain.Data;
+using CodeQuestsTask.Domain.Models;
+using CodeQuestsTask.Infrastructure;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 namespace CodeQuestsTask
 {
@@ -8,6 +15,20 @@ namespace CodeQuestsTask
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddDbContext<ApplicationDbContext>(option =>
+            {
+                option.UseSqlServer(builder.Configuration.GetConnectionString("QuestsConnectionString"));
+            }).AddIdentity<ApplicationUser, IdentityRole>(option =>
+            {
+                option.SignIn.RequireConfirmedAccount = false;  // for testing (for task only)
+                option.User.RequireUniqueEmail = true;
+                option.Password.RequireDigit = false;
+                option.Password.RequiredLength = 6;
+                option.Password.RequireLowercase = false;
+                option.Password.RequireNonAlphanumeric = false;
+                option.Password.RequireUppercase = false;
+            }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+
             builder.Services.AddControllers();
             builder.Services.AddSwaggerGen(option =>
             {
@@ -16,9 +37,29 @@ namespace CodeQuestsTask
                     Title = "CodeQuestsTask",
                     Version = "v1"
                 });
+                var jwtSecurityScheme = new OpenApiSecurityScheme
+                {
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                };
+                option.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+                option.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    { jwtSecurityScheme, Array.Empty<string>() }
+                });
             });
 
-
+            builder.Services.AddScoped<SaveMetaData>();
+            builder.Services.RegsiterJWT(builder.Configuration);
+            builder.Services.Register();
 
             var app = builder.Build();
             
