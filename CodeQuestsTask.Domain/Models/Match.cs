@@ -20,7 +20,7 @@ namespace CodeQuestsTask.Domain.Models
         [Required]
         public string VideoUrl { get; set; } = string.Empty;
         [Required]
-        public string MatchStatus { get; set; } = string.Empty;    // Live , Replay, Cancelled, Upcoming
+        public string MatchStatus { get; set; } = string.Empty;    // Live , Replay
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsDeleted { get; set; }

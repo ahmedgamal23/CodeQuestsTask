@@ -14,7 +14,7 @@ namespace CodeQuestsTask.Application.Interface
         IBaseRepository<Playlist, int> PlaylistRepository { get; }
         Task<int> SaveAsync();
         Task BeginTransactionAsync();
-        Task CommitTransactionAsync();
-        Task RollbackTransactionAsync();
+        Task CommitAsync();
+        Task RollbackAsync();
     }
 }

@@ -36,7 +36,8 @@ namespace CodeQuestsTask.Controllers
             var matches = await _unitOfWork.MatchRepository.GetAllAsync(
                 pagesize: pagesize, pageNumber: pageNumber,
                 orderBy: o => o.OrderByDescending(x => x.CreatedAt),
-                include: i => i.Include(x => x.User)
+                include: i => i.Include(x => x.User),
+                filter: x => !x.IsDeleted
             );
 
             BaseModel<MatchPublisherDto> model = new BaseModel<MatchPublisherDto>
@@ -55,7 +56,7 @@ namespace CodeQuestsTask.Controllers
         [Authorize]
         public async Task<IActionResult> GetMatch(int id)
         {
-            var match = await _unitOfWork.MatchRepository.GetByIdAsync(id);
+            var match = await _unitOfWork.MatchRepository.GetByIdAsync(id, x => !x.IsDeleted);
             if (match == null)
                 return NotFound(new BaseModel<MatchPublisherDto>
                 {
@@ -82,11 +83,37 @@ namespace CodeQuestsTask.Controllers
                     message = "Title is required",
                     success = false
                 });
-            var matches = _unitOfWork.MatchRepository.GetByName(match => match.Title == title && !match.IsDeleted);
+            var matches = _unitOfWork.MatchRepository.GetByName(match => match.Title.Contains(title) && !match.IsDeleted);
             if (matches == null || matches.Count() == 0)
                 return NotFound(new BaseModel<MatchPublisherDto>
                 {
                     message = $"Match not found this title not exist {title}",
+                    success = false
+                });
+            var matchDto = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches);
+            return Ok(new BaseModel<MatchPublisherDto>
+            {
+                DataList = matchDto,
+                message = "Success",
+                success = true
+            });
+        }
+
+        [HttpGet("GetMatchByStatus/{status}")]
+        [Authorize]
+        public IActionResult GetMatchByStatus(string status)
+        {
+            if (string.IsNullOrEmpty(status))
+                return BadRequest(new BaseModel<MatchPublisherDto>
+                {
+                    message = "Title is required",
+                    success = false
+                });
+            var matches = _unitOfWork.MatchRepository.GetByMatchStatus(match => match.MatchStatus == status && !match.IsDeleted);
+            if (matches == null || matches.Count() == 0)
+                return NotFound(new BaseModel<MatchPublisherDto>
+                {
+                    message = $"Match not found this title not exist {status}",
                     success = false
                 });
             var matchDto = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches);
@@ -124,6 +151,8 @@ namespace CodeQuestsTask.Controllers
 
             try
             {
+                await _unitOfWork.BeginTransactionAsync();
+
                 string imagePath = await _saveMetaData.Save(matchDto.ImageFile, SaveMetaData.MetaDataType.Images);
                 string videoPath = await _saveMetaData.Save(matchDto.VideoFile, SaveMetaData.MetaDataType.Videos);
 
@@ -150,6 +179,7 @@ namespace CodeQuestsTask.Controllers
 
                 if (rows > 0)
                 {
+                    await _unitOfWork.CommitAsync();
                     return Ok(new BaseModel<MatchPublisherDto>
                     {
                         Data = matchDto,
@@ -161,6 +191,8 @@ namespace CodeQuestsTask.Controllers
                 {
                     _saveMetaData.Delete(matchDto.ImageUrl);
                     _saveMetaData.Delete(matchDto.VideoUrl);
+                    await _unitOfWork.RollbackAsync();
+
                     return BadRequest(new BaseModel<MatchPublisherDto>
                     {
                         Data = matchDto,
@@ -173,6 +205,7 @@ namespace CodeQuestsTask.Controllers
             {
                 _saveMetaData.Delete(matchDto.ImageUrl);
                 _saveMetaData.Delete(matchDto.VideoUrl);
+                await _unitOfWork.RollbackAsync();
                 return StatusCode(500, new BaseModel<MatchPublisherDto>
                 {
                     message = "An error occurred while creating the match",
@@ -206,7 +239,7 @@ namespace CodeQuestsTask.Controllers
                 });
             }
 
-            Match? existingMatch = await _unitOfWork.MatchRepository.GetByIdAsync(id);
+            Match? existingMatch = await _unitOfWork.MatchRepository.GetByIdAsync(id, x => !x.IsDeleted);
             if (existingMatch == null)
             {
                 return NotFound(new BaseModel<MatchPublisherDto>
@@ -218,6 +251,8 @@ namespace CodeQuestsTask.Controllers
 
             try
             {
+                await _unitOfWork.BeginTransactionAsync();
+
                 if (dto.ImageFile != null)
                 {
                     string imagePath = await _saveMetaData.Save(dto.ImageFile, SaveMetaData.MetaDataType.Images);
@@ -250,6 +285,8 @@ namespace CodeQuestsTask.Controllers
                 int rows = await _unitOfWork.SaveAsync();
                 if (rows <= 0)
                 {
+                    await _unitOfWork.RollbackAsync();
+
                     return BadRequest(new BaseModel<Match>
                     {
                         Data = existingMatch,
@@ -258,6 +295,7 @@ namespace CodeQuestsTask.Controllers
                     });
                 }
 
+                await _unitOfWork.CommitAsync();
                 return Ok(new BaseModel<Match>
                 {
                     Data = existingMatch,
@@ -267,6 +305,7 @@ namespace CodeQuestsTask.Controllers
             }
             catch (Exception ex)
             {
+                await _unitOfWork.RollbackAsync();
                 return StatusCode(500, new BaseModel<Match>
                 {
                     message = "An error occurred while updating the match",
@@ -287,7 +326,8 @@ namespace CodeQuestsTask.Controllers
                     success = false,
                     message = "Id is required"
                 });
-            bool result = await _unitOfWork.MatchRepository.DeleteAsync(id);
+            await _unitOfWork.BeginTransactionAsync();
+            bool result = await _unitOfWork.MatchRepository.SoftDeleteAsync(id);
             if (!result)
                 return BadRequest(new BaseModel<Match>
                 {
@@ -296,11 +336,16 @@ namespace CodeQuestsTask.Controllers
                 });
             int rows = await _unitOfWork.SaveAsync();
             if (rows <= 0)
+            {
+                await _unitOfWork.RollbackAsync();
                 return BadRequest(new BaseModel<Match>
                 {
                     message = "Failed to save this match",
                     success = false
                 });
+            }
+
+            await _unitOfWork.CommitAsync();
             return Ok(new BaseModel<Match>
             {
                 message = $"Deleted Successfully {id}",

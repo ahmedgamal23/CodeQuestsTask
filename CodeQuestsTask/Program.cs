@@ -56,6 +56,15 @@ namespace CodeQuestsTask
                     { jwtSecurityScheme, Array.Empty<string>() }
                 });
             });
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("angular", op =>
+                {
+                    op.WithOrigins(builder.Configuration["JWT:Audience"]!)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+                });
+            });
 
             builder.Services.AddScoped<SaveMetaData>();
             builder.Services.RegsiterJWT(builder.Configuration);
@@ -75,9 +84,12 @@ namespace CodeQuestsTask
             }
 
             app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseCors("angular");
+
             app.UseAuthentication();
             app.UseAuthorization();
-
+            
             app.MapControllers();
 
             app.Run();

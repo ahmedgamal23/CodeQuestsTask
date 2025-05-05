@@ -43,33 +43,25 @@ namespace CodeQuestsTask.Infrastructure.Repository
                 _transaction = await _context.Database.BeginTransactionAsync();
         }
 
-        public async Task CommitTransactionAsync()
+        public async Task CommitAsync()
         {
-            try
+            if (_transaction != null)
             {
-                await _context.SaveChangesAsync();
-                if(_transaction != null)
-                    await _transaction.CommitAsync();
-            }
-            catch
-            {
-                await RollbackTransactionAsync();
-                throw;
-            }
-            finally
-            {
-                if(_transaction != null)
-                    await _transaction.DisposeAsync();
+                await _transaction.CommitAsync();
+                await _transaction.DisposeAsync();
+                _transaction = null;
             }
         }
 
-        public async Task RollbackTransactionAsync()
+        public async Task RollbackAsync()
         {
-            if(_transaction != null)
+            if (_transaction != null)
             {
                 await _transaction.RollbackAsync();
                 await _transaction.DisposeAsync();
+                _transaction = null;
             }
         }
+
     }
 }

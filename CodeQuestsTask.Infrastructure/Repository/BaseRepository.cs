@@ -31,7 +31,6 @@ namespace CodeQuestsTask.Infrastructure.Repository
         )
         {
             IQueryable<T> query = _dbset.AsNoTracking();
-            query = query.Where(e => EF.Property<bool>(e, "IsDeleted") == false);
 
             if (filter != null)
                 query = query.Where(filter);
@@ -46,26 +45,23 @@ namespace CodeQuestsTask.Infrastructure.Repository
             return await query.ToListAsync();
         }
 
-        public async ValueTask<T?> GetByIdAsync(TType id)
+        public async ValueTask<T?> GetByIdAsync(TType id, Expression<Func<T, bool>>? filter = null)
         {
-            var entity = await _dbset.AsNoTracking()
-                .FirstOrDefaultAsync(e => EF.Property<TType>(e, "Id")!.Equals(id));
+            var query = _dbset.AsNoTracking();
 
-            if (entity == null)
-                return null;
+            if (filter != null)
+                query = query.Where(filter);
 
-            var prop = typeof(T).GetProperty("IsDeleted");
-            if (prop != null && prop.PropertyType == typeof(bool))
-            {
-                bool isDeleted = (bool)prop.GetValue(entity)!;
-                if (isDeleted)
-                    return null;
-            }
-
+            var entity = await query.FirstOrDefaultAsync(e => EF.Property<TType>(e, "Id")!.Equals(id));
             return entity;
         }
 
         public IEnumerable<T> GetByName(Expression<Func<T, bool>> filter)
+        {
+            return _dbset.Where(filter);
+        }
+
+        public IEnumerable<T> GetByMatchStatus(Expression<Func<T, bool>> filter)
         {
             return _dbset.Where(filter);
         }
@@ -87,7 +83,7 @@ namespace CodeQuestsTask.Infrastructure.Repository
             return result.State == EntityState.Modified? new ValueTask<bool>(true) : new ValueTask<bool>(false);
         }
 
-        public async ValueTask<bool> DeleteAsync(TType id)
+        public async ValueTask<bool> SoftDeleteAsync(TType id)
         {
             var entity = await _dbset.FindAsync(id);
             if (entity == null) return false;
@@ -101,6 +97,15 @@ namespace CodeQuestsTask.Infrastructure.Repository
                 return true;
             }
 
+            return false;
+        }
+
+        public async ValueTask<bool> DeleteAsync(TType id)
+        {
+            var entity = await _dbset.FindAsync(id);
+            if (entity == null) return false;
+            var result = _dbset.Remove(entity);
+            if(result.State.Equals(EntityState.Deleted)) return true;
             return false;
         }
     }

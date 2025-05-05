@@ -9,8 +9,6 @@ namespace CodeQuestsTask.Domain.Models
     public enum MatchStatus
     {
         Live,
-        Replay,
-        Upcoming,
-        Canceled
+        Replay
     }
 }

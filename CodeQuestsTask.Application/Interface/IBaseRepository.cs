@@ -16,10 +16,12 @@ namespace CodeQuestsTask.Application.Interface
             Func<IQueryable<T>, IQueryable<T>>? include = null,
             Expression<Func<T, bool>>? filter = null
         );
-        ValueTask<T?> GetByIdAsync(TType id);
+        ValueTask<T?> GetByIdAsync(TType id, Expression<Func<T, bool>>? filter = null);
         IEnumerable<T> GetByName(Expression<Func<T, bool>> filter);
+        IEnumerable<T> GetByMatchStatus(Expression<Func<T, bool>> filter);
         ValueTask<T> AddAsync(T entity);
         ValueTask<bool> UpdateAsync(T entity, params string[] modified);
+        ValueTask<bool> SoftDeleteAsync(TType id);
         ValueTask<bool> DeleteAsync(TType id);
     }
 }
