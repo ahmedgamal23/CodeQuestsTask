@@ -1,4 +1,5 @@
-﻿using CodeQuestsTask.Application.Interface;
+﻿using CodeQuestsTask.Application.BaseModel;
+using CodeQuestsTask.Application.Interface;
 using CodeQuestsTask.Domain.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -22,7 +23,7 @@ namespace CodeQuestsTask.Infrastructure.Repository
             _dbset = _context.Set<T>();
         }
 
-        public async ValueTask<IEnumerable<T>> GetAllAsync(
+        public async ValueTask<BaseModel<T>> GetAllAsync(
            int pagesize = 10,
            int pageNumber = 1,
            Func<IQueryable<T>, IQueryable<T>>? orderBy = null,
@@ -41,8 +42,16 @@ namespace CodeQuestsTask.Infrastructure.Repository
             if (orderBy != null)
                 query = orderBy(query);
 
-            query = query.Skip((pageNumber - 1) * pagesize).Take(pagesize);
-            return await query.ToListAsync();
+            int totalPages = await query.CountAsync();
+            var result = await query.Skip((pageNumber - 1) * pagesize).Take(pagesize).ToListAsync();
+            return new BaseModel<T>
+            {
+                DataList = result,
+                TotalPages = totalPages,
+                PageNumber = pageNumber,
+                PageSize = pagesize,
+                success = true
+            };
         }
 
         public async ValueTask<T?> GetByIdAsync(TType id, Expression<Func<T, bool>>? filter = null)
@@ -56,14 +65,34 @@ namespace CodeQuestsTask.Infrastructure.Repository
             return entity;
         }
 
-        public IEnumerable<T> GetByName(Expression<Func<T, bool>> filter)
+        public async ValueTask<BaseModel<T>> GetByName(Expression<Func<T, bool>> filter , int pagesize = 10, int pageNumber = 1)
         {
-            return _dbset.Where(filter);
+            var query = _dbset.Where(filter);
+            int totalPages = await query.CountAsync();
+            query = query.Skip((pageNumber - 1) * pagesize).Take(pagesize);
+            return new BaseModel<T>
+            {
+                TotalPages = totalPages,
+                PageNumber = pageNumber,
+                PageSize = pagesize,
+                success = true,
+                DataList = await query.ToListAsync()
+            };
         }
 
-        public IEnumerable<T> GetByMatchStatus(Expression<Func<T, bool>> filter)
+        public async ValueTask<BaseModel<T>> GetByMatchStatus(Expression<Func<T, bool>> filter, int pagesize = 10, int pageNumber = 1)
         {
-            return _dbset.Where(filter);
+            var query = _dbset.Where(filter);
+            int totalPages = await query.CountAsync();
+            query = query.Skip((pageNumber - 1) * pagesize).Take(pagesize);
+            return new BaseModel<T>
+            {
+                TotalPages = totalPages,
+                PageNumber = pageNumber,
+                PageSize = pagesize,
+                success = true,
+                DataList = await query.ToListAsync()
+            };
         }
 
         public async ValueTask<T> AddAsync(T entity)

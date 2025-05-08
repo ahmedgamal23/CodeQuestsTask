@@ -23,7 +23,7 @@ namespace CodeQuestsTask
                 option.SignIn.RequireConfirmedAccount = false;  // for testing (for task only)
                 option.User.RequireUniqueEmail = true;
                 option.Password.RequireDigit = false;
-                option.Password.RequiredLength = 6;
+                option.Password.RequiredLength = 5;
                 option.Password.RequireLowercase = false;
                 option.Password.RequireNonAlphanumeric = false;
                 option.Password.RequireUppercase = false;

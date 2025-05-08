@@ -47,14 +47,17 @@ namespace CodeQuestsTask.Controllers
                     message = "playlist is empty"
                 });
 
-            var userMatchViewDtos = _mapper.Map<IEnumerable<UserMatchViewDto>>(playlists);
+            var userMatchViewDtos = _mapper.Map<IEnumerable<UserMatchViewDto>>(playlists.DataList);
             return Ok(new BaseModel<UserMatchViewDto>
             {
-                success = true,
-                message = "successfully",
                 DataList = userMatchViewDtos,
-                PageNumber = pageNumber,
-                PageSize = pageSize,
+                message = playlists != null ? "Success" : "Falier",
+                success = playlists?.success,
+                PageSize = playlists?.PageSize,
+                PageNumber = playlists?.PageNumber,
+                TotalPages = playlists?.TotalPages,
+                Exception = playlists?.Exception,
+                ModelState = playlists?.ModelState
             });
         }
 
@@ -73,7 +76,7 @@ namespace CodeQuestsTask.Controllers
             var playlist = _mapper.Map<Playlist>(userMatchDto);
             var result = await _unitOfWork.PlaylistRepository.
                                     GetAllAsync(filter:  x => x.UserId == playlist.UserId && x.MatchId == playlist.MatchId);
-            if(result.Any())
+            if(result.DataList!.Any())
                 return Ok(new BaseModel<Playlist>
                 {
                     success = true,
@@ -111,10 +114,10 @@ namespace CodeQuestsTask.Controllers
                     message = "incorrect data"
                 });
 
-            IEnumerable<Playlist> playlist = await _unitOfWork.PlaylistRepository.GetAllAsync
+            var playlist = await _unitOfWork.PlaylistRepository.GetAllAsync
                                     (filter: x => x.UserId == userMatchDto.UserId && x.MatchId == userMatchDto.MatchId);
 
-            var result = await _unitOfWork.PlaylistRepository.DeleteAsync(playlist.First().Id);
+            var result = await _unitOfWork.PlaylistRepository.DeleteAsync(playlist.DataList!.First().Id);
             int row = await _unitOfWork.SaveAsync();
             if (result == false || row <= 0)
                 return BadRequest(new BaseModel<Playlist>

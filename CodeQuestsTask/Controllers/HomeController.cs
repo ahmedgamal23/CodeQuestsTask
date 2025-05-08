@@ -75,7 +75,7 @@ namespace CodeQuestsTask.Controllers
 
         [HttpGet("GetMatchByTitle/{title}")]
         [Authorize]
-        public IActionResult GetMatchByTitle(string title)
+        public IActionResult GetMatchByTitle(string title, int pageNumber = 1, int pageSize = 10)
         {
             if (string.IsNullOrEmpty(title))
                 return BadRequest(new BaseModel<MatchPublisherDto>
@@ -83,25 +83,32 @@ namespace CodeQuestsTask.Controllers
                     message = "Title is required",
                     success = false
                 });
-            var matches = _unitOfWork.MatchRepository.GetByName(match => match.Title.Contains(title) && !match.IsDeleted);
-            if (matches == null || matches.Count() == 0)
+            var matches = _unitOfWork.MatchRepository.GetByName(
+                                   filter: match => match.Title.Contains(title) && !match.IsDeleted,
+                                   pagesize: pageSize,
+                                   pageNumber: pageNumber
+                                ).Result;
+            if (matches == null || matches.DataList == null || matches.DataList.Count() == 0)
                 return NotFound(new BaseModel<MatchPublisherDto>
                 {
-                    message = $"Match not found this title not exist {title}",
-                    success = false
+                    message = $"Match not found this title not exist {title} - {matches?.message}",
+                    success = matches?.success
                 });
-            var matchDto = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches);
+            var matchDto = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches.DataList);
             return Ok(new BaseModel<MatchPublisherDto>
             {
                 DataList = matchDto,
-                message = "Success",
-                success = true
+                message = "load data successfully",
+                success = matches.success,
+                TotalPages = matches.TotalPages,
+                PageNumber = matches.PageNumber,
+                PageSize = matches.PageSize
             });
         }
 
         [HttpGet("GetMatchByStatus/{status}")]
         [Authorize]
-        public IActionResult GetMatchByStatus(string status)
+        public IActionResult GetMatchByStatus(string status, int pageNumber = 1, int pageSize = 10)
         {
             if (string.IsNullOrEmpty(status))
                 return BadRequest(new BaseModel<MatchPublisherDto>
@@ -109,19 +116,26 @@ namespace CodeQuestsTask.Controllers
                     message = "Title is required",
                     success = false
                 });
-            var matches = _unitOfWork.MatchRepository.GetByMatchStatus(match => match.MatchStatus == status && !match.IsDeleted);
-            if (matches == null || matches.Count() == 0)
+            var matches = _unitOfWork.MatchRepository.GetByMatchStatus(
+                            filter: match => match.MatchStatus == status && !match.IsDeleted,
+                            pagesize: pageSize,
+                            pageNumber: pageNumber
+                            ).Result;
+            if (matches == null || matches.DataList == null || matches.DataList.Count() == 0)
                 return NotFound(new BaseModel<MatchPublisherDto>
                 {
-                    message = $"Match not found this title not exist {status}",
-                    success = false
+                    message = $"no match found with this {status} - {matches?.message}",
+                    success = matches?.success
                 });
-            var matchDto = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches);
+            var matchDto = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches.DataList);
             return Ok(new BaseModel<MatchPublisherDto>
             {
                 DataList = matchDto,
-                message = "Success",
-                success = true
+                message = "load data successfully",
+                success = matches.success,
+                TotalPages = matches.TotalPages,
+                PageNumber = matches.PageNumber,
+                PageSize = matches.PageSize
             });
         }
 

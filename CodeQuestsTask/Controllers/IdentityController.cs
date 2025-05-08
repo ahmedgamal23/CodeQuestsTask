@@ -33,6 +33,9 @@ namespace CodeQuestsTask.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new BaseModel<RegisterDto> { Data = registerDto, message = "Invalid data", success = false });
 
+            if (registerDto.Password != registerDto.ConfirmPassword)
+                return BadRequest(new BaseModel<RegisterDto> { Data = registerDto, message = "Invalid password data", success = false });
+
             // check if email already exists
             var existingUser = await _userManager.FindByEmailAsync(registerDto.Email);
             if(existingUser != null)
@@ -49,11 +52,16 @@ namespace CodeQuestsTask.Controllers
                 }
                 return Unauthorized(new BaseModel<RegisterDto> { Data = registerDto, ModelState = ModelState, success = false });
             }
+
+            // generate Token for login  (JWT)
+            string token = JWTGenerateToken.GenerateToken(_configuration, user);
+
             BaseModel<RegisterDto> model = new BaseModel<RegisterDto>
             {
                 Data = registerDto,
                 message = "User created successfully",
-                success = result.Succeeded
+                success = result.Succeeded,
+                Token = token
             };
             return Ok(model);
         }
