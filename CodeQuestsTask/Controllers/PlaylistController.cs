@@ -24,7 +24,7 @@ namespace CodeQuestsTask.Controllers
 
         [HttpGet("{pageNumber}/{pageSize}")]
         [Authorize]
-        public async Task<IActionResult> GetUserPlaylist([FromHeader] string userId, [FromRoute] int pageNumber=1, [FromRoute] int pageSize=10)
+        public async Task<IActionResult> GetUserPlaylist([FromQuery] string userId, [FromRoute] int pageNumber=1, [FromRoute] int pageSize=10)
         {
             if (userId == null)
                 return Unauthorized(new BaseModel<Playlist>
@@ -49,7 +49,7 @@ namespace CodeQuestsTask.Controllers
 
             var userMatchViewDtos = _mapper.Map<IEnumerable<UserMatchViewDto>>(playlists.DataList);
             return Ok(new BaseModel<UserMatchViewDto>
-            {
+            {                
                 DataList = userMatchViewDtos,
                 message = playlists != null ? "Success" : "Falier",
                 success = playlists?.success,
@@ -58,6 +58,37 @@ namespace CodeQuestsTask.Controllers
                 TotalPages = playlists?.TotalPages,
                 Exception = playlists?.Exception,
                 ModelState = playlists?.ModelState
+            });
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> CheckMatchInPlaylist([FromQuery] string userId, [FromQuery] int matchId)
+        {
+            if (string.IsNullOrEmpty(userId) || matchId == 0)
+            {
+                return Unauthorized(new BaseModel<Playlist>
+                {
+                    success = false,
+                    message = "Invalid user or match ID"
+                });
+            }
+
+            var playlist = await _unitOfWork.PlaylistRepository.GetAllAsync(
+                filter: x => x.UserId == userId && x.MatchId == matchId
+            );
+
+            if (playlist == null || playlist.DataList?.Count() == 0)
+                return Ok(new BaseModel<Playlist>
+                {
+                    success = false,
+                    message = "playlist is empty"
+                });
+
+            return Ok(new BaseModel<Playlist>
+            {
+                success = true,
+                message = "this match is exist in your playlist"
             });
         }
 
@@ -101,23 +132,19 @@ namespace CodeQuestsTask.Controllers
             });
         }
 
-        [HttpDelete]
+        [HttpDelete("{id}")]
         [Authorize]
-        public async Task<IActionResult> Delete([FromBody] UserMatchDto userMatchDto)
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
             // remove match from playlist
             if (!ModelState.IsValid)
                 return BadRequest(new BaseModel<UserMatchDto>
                 {
                     success = false,
-                    Data = userMatchDto,
                     message = "incorrect data"
                 });
 
-            var playlist = await _unitOfWork.PlaylistRepository.GetAllAsync
-                                    (filter: x => x.UserId == userMatchDto.UserId && x.MatchId == userMatchDto.MatchId);
-
-            var result = await _unitOfWork.PlaylistRepository.DeleteAsync(playlist.DataList!.First().Id);
+            var result = await _unitOfWork.PlaylistRepository.DeleteAsync(id);
             int row = await _unitOfWork.SaveAsync();
             if (result == false || row <= 0)
                 return BadRequest(new BaseModel<Playlist>

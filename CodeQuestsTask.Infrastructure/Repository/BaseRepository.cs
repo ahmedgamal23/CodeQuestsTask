@@ -101,15 +101,10 @@ namespace CodeQuestsTask.Infrastructure.Repository
             return entry.Entity;
         }
 
-        public ValueTask<bool> UpdateAsync(T entity, params string[] modified)
+        public async ValueTask<bool> UpdateAsync(T entity, params string[] modified)
         {
-            var result = _dbset.Attach(entity);
-            //_context.Entry(entity).State = EntityState.Modified;
-            foreach(var prop in modified)
-            {
-                _context.Entry(entity).Property(prop).IsModified = true;
-            }
-            return result.State == EntityState.Modified? new ValueTask<bool>(true) : new ValueTask<bool>(false);
+            _context.Set<T>().Update(entity);
+            return await Task.FromResult(true);
         }
 
         public async ValueTask<bool> SoftDeleteAsync(TType id)

@@ -84,6 +84,7 @@ namespace CodeQuestsTask
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
             app.UseCors("angular");
 

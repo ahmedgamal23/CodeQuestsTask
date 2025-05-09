@@ -55,7 +55,7 @@ namespace CodeQuestsTask.Controllers
 
             // generate Token for login  (JWT)
             string token = JWTGenerateToken.GenerateToken(_configuration, user);
-
+            registerDto.Id = user.Id;
             BaseModel<RegisterDto> model = new BaseModel<RegisterDto>
             {
                 Data = registerDto,
@@ -82,7 +82,7 @@ namespace CodeQuestsTask.Controllers
 
             // generate Token for login  (JWT)
             string token = JWTGenerateToken.GenerateToken(_configuration, user);
-
+            loginDto.Id = user.Id;
             return Ok(new BaseModel<LoginDto>
             {
                 Data = loginDto,

@@ -29,8 +29,8 @@ namespace CodeQuestsTask.Controllers
             _userManager = userManager;
         }
 
-        [HttpGet("GetAllMatches")]
-        public async Task<IActionResult> Index(int pagesize = 10, int pageNumber = 1)
+        [HttpGet("GetAllMatches/{pageNumber}/{pageSize}")]
+        public async Task<IActionResult> Index([FromRoute]int pagesize = 10, [FromRoute] int pageNumber = 1)
         {
             // view all videos
             var matches = await _unitOfWork.MatchRepository.GetAllAsync(
@@ -40,21 +40,12 @@ namespace CodeQuestsTask.Controllers
                 filter: x => !x.IsDeleted
             );
 
-            BaseModel<MatchPublisherDto> model = new BaseModel<MatchPublisherDto>
-            {
-                DataList = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches),
-                message = matches != null ? "Success" : "Falier",
-                success = matches != null ? true : false,
-                PageSize = pagesize,
-                PageNumber = pageNumber
-            };
-
-            return Ok(model);
+            return Ok(matches);
         }
 
         [HttpGet("GetMatchById/{id}")]
         [Authorize]
-        public async Task<IActionResult> GetMatch(int id)
+        public async Task<IActionResult> GetMatch([FromRoute]int id)
         {
             var match = await _unitOfWork.MatchRepository.GetByIdAsync(id, x => !x.IsDeleted);
             if (match == null)
@@ -265,8 +256,6 @@ namespace CodeQuestsTask.Controllers
 
             try
             {
-                await _unitOfWork.BeginTransactionAsync();
-
                 if (dto.ImageFile != null)
                 {
                     string imagePath = await _saveMetaData.Save(dto.ImageFile, SaveMetaData.MetaDataType.Images);
@@ -299,8 +288,6 @@ namespace CodeQuestsTask.Controllers
                 int rows = await _unitOfWork.SaveAsync();
                 if (rows <= 0)
                 {
-                    await _unitOfWork.RollbackAsync();
-
                     return BadRequest(new BaseModel<Match>
                     {
                         Data = existingMatch,
@@ -308,8 +295,6 @@ namespace CodeQuestsTask.Controllers
                         success = false
                     });
                 }
-
-                await _unitOfWork.CommitAsync();
                 return Ok(new BaseModel<Match>
                 {
                     Data = existingMatch,
@@ -319,7 +304,6 @@ namespace CodeQuestsTask.Controllers
             }
             catch (Exception ex)
             {
-                await _unitOfWork.RollbackAsync();
                 return StatusCode(500, new BaseModel<Match>
                 {
                     message = "An error occurred while updating the match",
