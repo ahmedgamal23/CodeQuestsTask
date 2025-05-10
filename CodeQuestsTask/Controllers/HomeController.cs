@@ -97,9 +97,8 @@ namespace CodeQuestsTask.Controllers
             });
         }
 
-        [HttpGet("GetMatchByStatus/{status}")]
-        [Authorize]
-        public IActionResult GetMatchByStatus(string status, int pageNumber = 1, int pageSize = 10)
+        [HttpGet("GetMatchByStatus/{status}/{pageNumber}/{pageSize}")]
+        public IActionResult GetMatchByStatus([FromRoute]string status, [FromRoute] int pageNumber = 1, [FromRoute] int pageSize = 10)
         {
             if (string.IsNullOrEmpty(status))
                 return BadRequest(new BaseModel<MatchPublisherDto>
@@ -112,12 +111,6 @@ namespace CodeQuestsTask.Controllers
                             pagesize: pageSize,
                             pageNumber: pageNumber
                             ).Result;
-            if (matches == null || matches.DataList == null || matches.DataList.Count() == 0)
-                return NotFound(new BaseModel<MatchPublisherDto>
-                {
-                    message = $"no match found with this {status} - {matches?.message}",
-                    success = matches?.success
-                });
             var matchDto = _mapper.Map<IEnumerable<MatchPublisherDto>>(matches.DataList);
             return Ok(new BaseModel<MatchPublisherDto>
             {
