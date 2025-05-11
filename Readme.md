@@ -18,7 +18,7 @@ Users can add, edit, and delete videos from their playlists, as well as view and
 
 ----------
 ## Technologies Used
-- Frontend: Angular, HTML, CSS, JavaScript
+- Frontend: Angular, HTML, CSS, TypeScript, Angular 
 - Backend: .NET Core, C#
 - Database: SQL Server
 - Authentication: JWT (JSON Web Tokens)
