@@ -27,5 +27,24 @@ Users can add, edit, and delete videos from their playlists, as well as view and
 - Logging: Serilog
 - Error Handling: Global Exception Handling Middleware
 
+--------
+📲 Features
+✅ Functional Features
+- Register/Login with JWT Authentication
+
+- Browse Available Matches (filter by Live/Replay)
+
+- Add Match to Playlist
+
+- Remove Match from Playlist
+
+- View User's Playlist
+
+- Responsive, Mobile-Friendly UI
+
+🎁 Bonus Feature
+- Watch Button: Opens a modal with an embedded YouTube video as a match preview placeholder.
+
+
 -----------
 
